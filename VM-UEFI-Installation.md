@@ -335,7 +335,7 @@ As previously mentioned, there's a huge list of mirrors all around the globe fro
 
 For this to be possible, we need to edit `/etc/pacman.d/mirrorlist`. Quite easy, right? But... do you know if there is any available text editor already installed on the system? 🥺
 
-Fortunately, we do have our friends `vim` and `nano` already installed and ready to be used for these kind of purposes! 💪🏻
+Fortunately, we do have our friend `nano` already installed and ready to be used for these kind of purposes! 💪🏻
 
 Run the following command (using your preferred text editor) to get into the mirrors list and optimize it a little bit:
 ```bash
@@ -374,24 +374,385 @@ That's going to take a while, so make yourself comfortable and, if you want, tak
 
 ## Configuring the system
 
-To generate the File System Table
+<br>
 
-```bash
-$ genfstab -U /mnt >> /mnt/etc/fstab
-```
+### Generate the File System Table
 
-To login as root into the new system
+  * Generate an `fstab` file by running:
 
-```bash
-$ arch-chroot /mnt
-```
-
-<img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmChroot.png">
-
-> _Note how the prompt has changed... we're no longer root on the Live Environment but **root on our brand new system!**_
+  ```bash
+  $ genfstab -U /mnt >> /mnt/etc/fstab
+  ```
 
 <br>
 
-And, as we are already on our system, we can run our dear pal `ls` to list the files on the system:
+### CHRooting into the new system
 
-<img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmFirstLS.png">
+* To login as root into the new system, run:
+
+  ```bash
+  $ arch-chroot /mnt
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmChroot.png">
+
+  > _Note how the prompt has changed... we're no longer root on the Live Environment but **root on our brand new system!**_
+
+<br>
+
+* And, as we are already on our system, we can run our dear pal `ls` to list the files on the system:
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmFirstLS.png">
+
+<br>
+
+### Setting the Time Zone
+
+* Run the following command, taking in count your might need to use different Zones
+
+  ```bash
+  $ ln -sf /usr/share/zoneinfo/America/Lima /etc/localtime
+  ```
+
+  * Where `America` is the Zone I'm selecting
+  * And `Lima` is the City (inside the Zone) I'm also selecting
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmTimeZone.png">
+
+  > _You can press `tab` to see the list of available Zones and then, once you've identified yours, you can `tab` again to see the list of available cities_
+
+  <br>
+
+* The run the following command to generate `/etc/adjtime`:
+  ```bash
+  $ hwclock --systohc
+  ```
+
+<br>
+
+###  Localization
+
+* Let's first select our corresponding `locale` and `charset` _(in my case, I'll maintain the system in English -as my Keyboard Layout)_ by running the following command:
+  ```bash
+  $ nano /etc/locale.gen
+  ```
+
+<br>
+
+* Search for your desired combination and uncomment the corresponding line _(In my case `en_US.UTF-8 UTF-8`)_:
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmLocale.png">
+
+  > _You can use `Ctrl + W` in `nano` to **search text**. Once found, just uncomment the appropriate line and then hit `Ctrl + O` to **save** and then `Ctrl + X` to **exit**_
+
+  <br>
+
+* Then just run the following command to actually generate the localization files for the system:
+  ```bash
+  $ locale-gen
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmLocaleGen.png">
+
+  <br>
+
+* Once done, we need to create the `/etc/locale.conf` file. To do so, run:
+  ```bash
+  $ nano /etc/locale.conf
+  ```
+
+  <br>
+
+* And set the following content to the recently created file: `LANG=en_US.UTF-8` _(again, this will depend on how you're configuring your installation)_
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmLocaleConf.png">
+
+  > _Don't forget to save the file and then exit the editor_
+
+  <br>
+
+### Network Configuration
+
+* First we need to set our **hostname**, the name that our PC will use:
+  ```bash
+  $ echo archVM > /etc/hostname
+  ```
+
+  > _This will create a new text file called `/etc/hostname` with `archVM` (the hostname I've decided to go to with -yours might be different-) as the sole content of the file_
+
+  <br>
+
+* And then we need to add the matching entries into our `hosts` file. Edit the file, by running the following command and changing its content:
+  ```bash
+  $ nano /etc/hosts
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmHosts.png">
+
+  > _You might need to change `archVM` for the hostname you set on the step above. Don't forget to save and then exit!_
+
+  <br>
+
+### Enable the Network
+
+* We need to install a package in order to be able to properly enable our system's network. Run the following command and then hit `y`or `Y` to proceed with the installation:
+  ```bash
+  $ pacman -S networkmanager
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmNetworkManager.png">
+
+  <br>
+
+* Once installed, enable it:
+  ```bash
+  $ systemctl enable NetworkManager
+  ```
+
+  > _Please, note the **capital N** and **capital M** on the name of the service we're trying to enable_
+
+  <br>
+
+* The above will create some symbolic links required for the Network Manager to boot up properly along with your system.
+
+<br>
+
+* Then we need to enable another service to make sure every time the system boots up, our network configuration is up & running as well _(remember when I mentioned that the official installation guide is not that much extensive? Well, this is one of those things that it don't explicitly mentions)_ 🙄
+  ```bash
+  $ systemctl enable dhcpcd
+  ```
+
+<br>
+
+### Root Password
+
+* We've reached that point in which we're finally going to create a password for our root user. _Wait... what!? For the root user?_ 🤬. Yes, just only a few more commands to get everything properly set and we'll get into the real deal
+
+* Run `passwd` and type the password you'll want the **root user** to have (it will ask you to enter it twice)
+
+  > _`passwd` is one of those commands that we'll need every time we're setting up a new Linux Installation, so I strongly recommend you to give the man page a look and get it to know a little bit more in detail_
+
+* In this case, and as we're not passing any parameters into the command, it will create a new password for the current user _(which is... **root** yeah!_ 🤴🏻).
+
+<br>
+
+### Configuring Users and Groups
+
+Besides the root user, we might need another user (our own) to be able to log into our system without the need of being root all the time (which is not 100% recommended, but it will depended on how and with what purpose you're configuring this installation).
+
+* Run the following command to add a new user to the system:
+  ```bash
+  $ useradd -m charlie
+  ```
+
+  > _Where `charlie` is the user I'm currently adding. You might one to add a different one_
+
+  <br>
+
+* Now let's create a password for our brand new user _(remember how to create a password?)_ 🤔
+  ```bash
+  $ passwd charlie
+  ```
+
+  > _Add the desired password once, then again, and we're all set_
+
+  <br>
+
+* Now let's add `charlie` to the required Groups and grant it with sudo privileges
+
+  * `sudo` does not come included on the basic Arch Linux installation, so we need to install it _(hit `y` once prompted for confirmation)_:
+    ```bash
+    $ pacman -S sudo
+    ```
+
+    <br>
+
+  * Add the user to the **wheel** group, which is the Arch Linux default group for users with root privileges _(other distros might have different group names for this same purpose)_:
+    ```bash
+    $ usermod -aG wheel,audio,video,optical,storage charlie
+    ```
+
+    > _To double check that the above command did its job, just run `groups charlie` and confirm that the groups in which we previously added our user are listed on the output_
+
+    <br>
+
+  * Add the user to the **sudoers** (so it can run commands that require root privileges without having to actually become root):
+    ```bash
+    $ visudo
+    ```
+
+    > _You might notice that the above command returned an error... Whaaat?_ 😤. _Well, we're installing one of the minimalest Linux Distributions out there, right? We need to install it first to be able to use it_
+
+    <br>
+
+    > _If you want to miss some of the fun, you can just run `EDIATOR=nano visudo` and edit the file using `nano`_ 🤷🏻‍♂️
+
+    <br>
+
+    * Install `vim` by running the following command:
+      ```bash
+      $ pacman -S vim
+      ```
+    
+      <br>
+  
+  * Then run the `visudo` command again to open the `/etc/sudoers.tmp` file
+
+    <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmSudoers.png">
+
+    <br>
+  
+    * Now try to navigate through the file... _but do not use your arrow keys_ 😏
+    * This is a great opportunity to get immersed (just a little bit, though) into the **Vim World**
+    * Use `h` to **navigate left**
+    * Use `l` to **navigate right**
+    * Use `j` to **navigate up**
+    * Use `k` to **navigate down**
+    * The Vim Keys! 🤘🏻
+
+    <br>
+
+    * Navigate down until you find the line that says _"Uncomment to allow members of group wheel to execute any command"_. Make sure your prompt is one more line down of the comment (just where `# wheel ALL=(ALL) ALL` is) and hit `x` to delete the current character... 🤯 _yes, welcome to Vim_
+
+      <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmSudoers2.png">
+
+      <br>
+
+    * Once you have uncommented the required line, hit `:`, type `wq` and then hit `enter`... _Yes, my friend. Write the file and then Quit the program_ 🔥
+
+      <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmSudoers3.png">
+
+      <br>
+
+### The Boot Loader
+
+Before we can reboot our system for the very first time and be able to login with our brand new User, we need to make sure that we have a boot loader properly installed and configured (otherwise, things might get weird the next time we try to boot up our system).
+
+This is the most crucial step for the **UEFI Installation Mode** guide we're following (as it differs a little bit ~~maybe more~~ from what it is required for a **Legacy / BIOS** installation).
+
+* First we need to install the required packages (confirm the installation by hitting `y` when prompted):
+  ```bash
+  $ pacman -S grub efibootmgr
+  ```
+
+  <br>
+
+* Create the `efi` folder (which needs to be inside `/boot`):
+  ```bash
+  $ mkdir /boot/efi
+  ```
+  
+  <br>
+
+* Run `lsblk` to remember which is the identifier for our **UEFI** partition
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBootLoader1.png">
+
+  > _If you remember (because I couldn't), our UEFI partition was the one with 512M of available space_
+
+  <br>
+
+* Once we know ~~remember~~ which is our **UEFI** partition and how it is identified, let's run the following command:
+  ```bash
+  $ mount /dev/sda1 /boot/efi
+  ```
+
+  > _Where `/dev/sda1` is our partition and `/boot/efi` is the location in which we're going to mount it_
+  
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBootLoader2.png">
+
+  > _If you want to double check, feel free to re-run `lsblk` and confirm that everything looks good_
+
+  <br>
+
+* Run the following command to install the **grub** under **UEFI** conditions (this command is very different from the one to install the grub on other modes, so please be extra careful with the parameters we're going to pass):
+  ```bash
+  $ grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBootLoader3.png">
+
+  <br>
+
+* Once finished (without any errors), we need to run the following command in order to create the config file for the previously installed boot loader:
+  ```bash
+  $ grub-mkconfig -o /boot/grub/grub.cfg
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBootLoader4.png">
+
+  <br>
+
+* Up to this point, if you are already installing the distro on your real hardware, you might be able to reboot your system and get it up & running without any issues; unfortunately, UEFI gives some additional troubles when simulating a real installation on a VM, so we'll need to run a few more commands to make sure our system (virtualized, in this case, always boots).
+
+* Create a new directory to be able to have a _backup_ boot loader in case the original fails at startup:
+  ```bash
+  $ mkdir /boot/efi/EFI/BOOT
+  ```
+
+* And then copy the original file from the previously installed grub into our recently created backup/fallback folder:
+  ```bash
+  $ cp /boot/efi/EFI/GRUB/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBootLoader5.png">
+
+  > _Make sure you are using the same Capital Letters and be careful with the renaming of the `grubx64.efi` file (which needs to be copied as `BOOTX64.EFI`, all in caps)_
+
+  <br>
+
+* To be even safer, let's create a startup script for UEFI:
+  ```bash
+  $ nano /boot/efi/startup.nsh
+  ```
+  
+  <br>
+
+* Inside the file, let's add the following contents:
+  ```
+  bcf boot add 1 fs0:\EFI\GRUB\grubx64.efi "My GRUB boot loader"
+  exit
+  ```
+
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBootLoader6.png">
+
+  > _**Be careful with the Capital Letters and also with the back slashes `\` used on the file contents**_
+
+  <br>
+
+* Run `exit` to sign out from the system's root user account
+
+* Run `umount -R /mnt` to recursively unmount all the previously mounted partitions
+
+* And run `reboot`... _fingers crossed _ 🤞🏻
+
+<br>
+
+Once done, we should have our **UEFI** Arch Linux installation up, booting & running! 👏🏻
+
+<img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmComplete.png">
+
+<br>
+
+> _Don't forget to shutdown your VM, go to it's settings and remove the virtual ISO we added at the beginning of the guide as we won't need it any more_
+
+<br>
+
+### Installing some additional basic packages
+
+From now on, everything you decide to install on your system will depend on what you need and what you want. In my case, I'll try to install a couple of useful packages that are for general use for the most part:
+
+* To do so, login as your user (we don't need to use the root account anymore) and run:
+
+```bash
+$ sudo pacman -S pulseaudio pulseaudio-alsa xorg xorg-xinit xorg-server lightdm lightdm-gtk-greeter virtualbox-guest-utils
+```
+
+<img style="display: block; margin-left: auto; margin-right: auto; width: 70%;" src="images/vmBasicPackages.png">
+
+> _`xorg` will ask confirmation about which components to install (nearly 50), just hit `enter` to install them all_
+
+> _In the case of `virtualbox-guest-utils`, make sure to type `2` and then hit `enter` to install the desired `virtual-box-guest-modules-arch` package_
+
+<br>
+
