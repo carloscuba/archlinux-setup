@@ -59,10 +59,14 @@ For this guide, I'm using a Mac with Mac OS Mojave (10.14.10) but I'll try to li
   $ diskutil unmountDisk /dev/disk2
   ```
 
+  <br>
+
 * Once unmounted, you'll see an output similar to:
   ```bash
   Unmount of all volumes on disk2 was successful
   ```
+
+  <br>
 
 * Then, run the following command to format the Device and copy the `.iso` into it:
   ```bash
@@ -83,7 +87,11 @@ For this guide, I'm using a Mac with Mac OS Mojave (10.14.10) but I'll try to li
   
   * `&& sync` is actually another command (not an option of `dd`). It will clear the cache (after running `dd` -_that's why it is used after the `&&`_) and will ensure that all the data is written into the drive and nothing is left in the cache
 
+  <br>
+
 * Once you've checked that everything is looking good (all names/paths are correct), hit `enter` and wait for the command to finish its job (it might take some time to complete).
+
+<br>
 
 * After the `.iso` is completely written into the USB, you'll get an output like the following:
   ```bash
@@ -91,13 +99,19 @@ For this guide, I'm using a Mac with Mac OS Mojave (10.14.10) but I'll try to li
   155+1 records out
   652214272 bytes transferred in 63.194349 secs (10320769 bytes/sec)
   ```
- 
+  
+  <br>
+
 * And then you'll be prompted with the following message (just click the **Ignore** button):
 
-  <img style="display: block; margin-left: auto; margin-right: auto; width: 50%;" src="images/diskNotReadable.png" width=400>
+  <img style="display: block; margin-left: auto; margin-right: auto; width: 50%;" src="images/diskNotReadable.png">
+
+  <br>
 
 
 * To reverse the process, you only need to re-format the USB Flash Drive with the desired settings and it will become usable to write/read data again.
+
+<br>
 
 After all of the above steps are complete, we should be ready to boot up Arch Linux from the USB Flash Drive and start with the installation process.
 

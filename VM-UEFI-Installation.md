@@ -756,3 +756,4 @@ $ sudo pacman -S pulseaudio pulseaudio-alsa xorg xorg-xinit xorg-server lightdm 
 
 <br>
 
+If you want to know more about these packages (and what dependencies they will bring with them), I highly recommend you to take a quick tour over their official sites (you should be able to find them all on the [Arch Linux Wiki](https://wiki.archlinux.org)).
